@@ -2,6 +2,10 @@
 
 [![ci](https://github.com/p-vbordei/ws-reconnect/actions/workflows/ci.yml/badge.svg)](https://github.com/p-vbordei/ws-reconnect/actions/workflows/ci.yml)
 
+[![npm](https://img.shields.io/npm/v/%40p-vbordei%2Fws-reconnect.svg)](https://www.npmjs.com/package/@p-vbordei/ws-reconnect)
+[![downloads](https://img.shields.io/npm/dm/%40p-vbordei%2Fws-reconnect.svg)](https://www.npmjs.com/package/@p-vbordei/ws-reconnect)
+[![bundle](https://img.shields.io/bundlejs/size/%40p-vbordei%2Fws-reconnect)](https://bundlejs.com/?q=%40p-vbordei%2Fws-reconnect)
+
 Three small, framework-agnostic helpers for building robust WebSocket clients. No `WebSocket` implementation included — bring your own. These are the pieces around it.
 
 ```ts
