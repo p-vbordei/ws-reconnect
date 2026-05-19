@@ -6,25 +6,19 @@
 [![downloads](https://img.shields.io/npm/dm/%40p-vbordei%2Fws-reconnect.svg)](https://www.npmjs.com/package/@p-vbordei/ws-reconnect)
 [![bundle](https://img.shields.io/bundlejs/size/%40p-vbordei%2Fws-reconnect)](https://bundlejs.com/?q=%40p-vbordei%2Fws-reconnect)
 
-Three small, framework-agnostic helpers for building robust WebSocket clients. No `WebSocket` implementation included — bring your own. These are the pieces around it.
+> Three small, framework-agnostic helpers for building robust WebSocket clients. No `WebSocket` implementation included — bring your own. These are the pieces around it.
 
 ```ts
 import { backoff, BackoffState, checkSequence, describeCloseCode } from "@p-vbordei/ws-reconnect";
 
-// 1. Compute next reconnect delay
-const ms = backoff(attempt, { baseMs: 250, maxMs: 30_000, jitter: "full" });
-
-// 2. Or use the stateful helper
 const state = new BackoffState({ baseMs: 250, maxMs: 30_000 });
 ws.addEventListener("open",  () => state.reset());
 ws.addEventListener("close", () => setTimeout(reconnect, state.next()));
 
-// 3. Detect gaps in a server-sequenced message stream
 const r = checkSequence(prevSeq, msg.seq);
 if (r.kind === "gap")   triggerResync(r.missing);
 if (r.kind === "reset") clearLocalCache();
 
-// 4. Decide whether to retry from a close code
 const info = describeCloseCode(event.code);
 if (!info.retriable) abort();
 ```
@@ -33,6 +27,100 @@ if (!info.retriable) abort();
 
 ```sh
 npm install @p-vbordei/ws-reconnect
+```
+
+Works with Node 20+, browsers, Bun, Deno. ESM + CJS.
+
+## Why
+
+Every WebSocket client needs the same three pieces:
+
+1. **Exponential backoff with jitter** so clients don't all reconnect at the same moment after an outage.
+2. **Sequence-gap detection** to know when the server dropped messages and you need to resync.
+3. **Close-code interpretation** so you don't retry forever after a 4401 unauthorized.
+
+These never live well inside the socket class — they want unit tests, injectable clocks, and to be shared across web/Node clients. Easier to pull them out.
+
+## Recipes
+
+### Reconnecting WebSocket client (browser)
+
+```ts
+import { BackoffState, describeCloseCode } from "@p-vbordei/ws-reconnect";
+
+class ReconnectingWS {
+  private ws?: WebSocket;
+  private state = new BackoffState({ baseMs: 250, maxMs: 30_000 });
+
+  constructor(private url: string) { this.connect(); }
+
+  private connect() {
+    this.ws = new WebSocket(this.url);
+    this.ws.addEventListener("open",  () => this.state.reset());
+    this.ws.addEventListener("close", (e) => {
+      const info = describeCloseCode(e.code);
+      if (info.retriable) {
+        setTimeout(() => this.connect(), this.state.next());
+      } else {
+        console.warn(`won't retry: ${info.name} - ${info.description}`);
+      }
+    });
+  }
+
+  send(data: string) { this.ws?.send(data); }
+  close() { this.ws?.close(1000, "client closing"); }
+}
+```
+
+### Resync on detected gap
+
+```ts
+import { checkSequence } from "@p-vbordei/ws-reconnect";
+
+let lastSeq = 0;
+
+ws.onmessage = async (e) => {
+  const msg = JSON.parse(e.data);
+  const r = checkSequence(lastSeq, msg.seq);
+
+  if (r.kind === "gap") {
+    console.warn(`missed ${r.missing} messages, resyncing`);
+    await fetchSinceSeq(lastSeq);
+  } else if (r.kind === "reset") {
+    console.warn("server restarted, clearing cache");
+    cache.clear();
+  } else if (r.kind === "duplicate") {
+    return;  // ignore replays
+  }
+
+  lastSeq = msg.seq;
+  handle(msg);
+};
+```
+
+### Tune backoff for fast vs slow services
+
+```ts
+import { backoff } from "@p-vbordei/ws-reconnect";
+
+// Real-time game client: reconnect fast
+backoff(attempt, { baseMs: 100, maxMs: 2_000, jitter: "equal" });
+
+// Analytics WebSocket: reconnect slow, don't hammer
+backoff(attempt, { baseMs: 1_000, maxMs: 60_000, jitter: "full" });
+```
+
+### Detect rate-limit close codes
+
+```ts
+import { describeCloseCode } from "@p-vbordei/ws-reconnect";
+
+ws.addEventListener("close", (e) => {
+  const info = describeCloseCode(e.code);
+  if (info.code === 4429) {
+    setTimeout(connect, 60_000);  // back off aggressively
+  }
+});
 ```
 
 ## API
@@ -50,6 +138,7 @@ Returns the delay (ms) for a 1-based attempt number. Clamped to `maxMs`.
 | `random` | `() => number` | `Math.random` | Injectable for tests |
 
 Jitter strategies:
+
 - `none` — deterministic exponential
 - `full` — `random() * cappedExponential` (recommended; avoids reconnect stampedes)
 - `equal` — `half + random() * half`
@@ -83,9 +172,10 @@ Classifies the relationship between two sequence numbers:
 
 Returns `{ code, name, description, retriable }`. Covers all standard RFC 6455 codes (1000–1015) plus common application codes (4401 unauthorized, 4429 rate-limited, ...). Unknown codes return a sensible default rather than throwing.
 
-## Why these three?
+## Caveats
 
-Every WebSocket client I've written needs the same three pieces. They never live well inside the socket class itself — they want unit tests, they want injection-friendly clocks, they want to be shared across both web and Node clients. Easier to pull them out.
+- **Pure helpers — no WebSocket impl.** Bring your own (`WebSocket`, `ws`, `partysocket`, etc.).
+- **No heartbeat helper.** Some servers expect periodic pings to keep the connection alive — add your own `setInterval` ping; that's app-specific.
 
 ## License
 
