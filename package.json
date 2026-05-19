@@ -1,0 +1,43 @@
+{
+  "name": "ws-reconnect",
+  "version": "0.1.0",
+  "description": "Pure helpers for WebSocket reconnection: exponential backoff with jitter, sequence-gap classifier, RFC 6455 close-code lookup. Zero dependencies.",
+  "keywords": ["websocket", "reconnect", "backoff", "jitter", "sequence", "close-code"],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": {
+    "name": "Vlad Bordei",
+    "email": "bordeivlad@gmail.com",
+    "url": "https://github.com/p-vbordei"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/p-vbordei/ws-reconnect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/p-vbordei/ws-reconnect/issues"
+  },
+  "homepage": "https://github.com/p-vbordei/ws-reconnect#readme",
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
