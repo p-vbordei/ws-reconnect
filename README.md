@@ -5,7 +5,7 @@
 Three small, framework-agnostic helpers for building robust WebSocket clients. No `WebSocket` implementation included — bring your own. These are the pieces around it.
 
 ```ts
-import { backoff, BackoffState, checkSequence, describeCloseCode } from "ws-reconnect";
+import { backoff, BackoffState, checkSequence, describeCloseCode } from "@p-vbordei/ws-reconnect";
 
 // 1. Compute next reconnect delay
 const ms = backoff(attempt, { baseMs: 250, maxMs: 30_000, jitter: "full" });
@@ -28,7 +28,7 @@ if (!info.retriable) abort();
 ## Install
 
 ```sh
-npm install ws-reconnect
+npm install @p-vbordei/ws-reconnect
 ```
 
 ## API
