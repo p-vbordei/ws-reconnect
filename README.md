@@ -1,5 +1,7 @@
 # ws-reconnect
 
+[![ci](https://github.com/p-vbordei/ws-reconnect/actions/workflows/ci.yml/badge.svg)](https://github.com/p-vbordei/ws-reconnect/actions/workflows/ci.yml)
+
 Three small, framework-agnostic helpers for building robust WebSocket clients. No `WebSocket` implementation included — bring your own. These are the pieces around it.
 
 ```ts
