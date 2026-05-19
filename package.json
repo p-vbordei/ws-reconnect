@@ -1,6 +1,6 @@
 {
   "name": "@p-vbordei/ws-reconnect",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pure helpers for WebSocket reconnection: exponential backoff with jitter, sequence-gap classifier, RFC 6455 close-code lookup. Zero dependencies.",
   "keywords": [
     "websocket",
